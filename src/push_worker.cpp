@@ -253,7 +253,7 @@ bool aioapnspusher::notify_out()
 	}
 
 	lyramilk::data::var v;
-	lyramilk::data::json::parse(pushtask,v);
+	lyramilk::data::json::parse(pushtask,&v);
 
 	lyramilk::data::string payloadstr = v["data"];
 	if(payloadstr.empty()){
@@ -297,13 +297,29 @@ bool aioapnspusher::notify_out()
 	payload << payloadstr;
 
 	std::tr1::unordered_map<lyramilk::data::string,lyramilk::data::string> m;
-	m[":method"] = "POST";
-	m[":path"] = path;
 	m["content-length"] = stroflong(payloadstr.size());
 	m["apns-topic"] = apns_topic;
 	m["apns-id"] = apnsid;
 
 	std::vector<nghttp2_nv> headers;
+	{
+		nghttp2_nv nv;
+		nv.name = (uint8_t*)":method";
+		nv.namelen = 7;
+		nv.value = (uint8_t*)"POST";
+		nv.valuelen = 4;
+		nv.flags = NGHTTP2_NV_FLAG_NONE;
+		headers.push_back(nv);
+	}
+	{
+		nghttp2_nv nv;
+		nv.name = (uint8_t*)":path";
+		nv.namelen = 5;
+		nv.value = (uint8_t*)path.c_str();
+		nv.valuelen = path.size();
+		nv.flags = NGHTTP2_NV_FLAG_NONE;
+		headers.push_back(nv);
+	}
 	std::tr1::unordered_map<lyramilk::data::string,lyramilk::data::string>::iterator it = m.begin();
 	for(;it!=m.end();++it){
 		nghttp2_nv nv;
@@ -463,7 +479,7 @@ int aioapnspusher::on_stream_close_callback(nghttp2_session *session, int32_t st
 				lyramilk::klog(lyramilk::log::warning,"mpush.http2.on_stream_close") << "投递失败：" << p->responseheader << ",原因" << p->body << std::endl;
 
 				lyramilk::data::var vbody;
-				lyramilk::data::json::parse(p->body,vbody);
+				lyramilk::data::json::parse(p->body,&vbody);
 				if(vbody.type() == lyramilk::data::var::t_map){
 					lyramilk::data::string reason = vbody["reason"].str();
 					if(reason == "TooManyRequests" || reason == "PayloadEmpty"){
@@ -477,11 +493,11 @@ int aioapnspusher::on_stream_close_callback(nghttp2_session *session, int32_t st
 							lyramilk::data::string taskstr = ret.str();
 
 							lyramilk::data::var vtask;
-							lyramilk::data::json::parse(taskstr,vtask);
+							lyramilk::data::json::parse(taskstr,&vtask);
 							vtask["apnsid"] = apnsid;
 
 							lyramilk::data::string newtaskstr;
-							lyramilk::data::json::stringify(vtask,newtaskstr);
+							lyramilk::data::json::stringify(vtask,&newtaskstr);
 
 							{
 								lyramilk::data::var ret;
