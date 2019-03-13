@@ -1,7 +1,7 @@
 ﻿#ifndef _mpush_config_h_
 #define _mpush_config_h_
 
-#define TEAPOY_VERSION "mpush ${version} with libmilk ${LIBMILK_VERSION}"
+#define MPUSH_VERSION "mpush ${version} with libmilk ${LIBMILK_VERSION}"
 
 ${CMAKE_CONFIG_MACROS}
 
